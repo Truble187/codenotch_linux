@@ -43,7 +43,9 @@ fn load_credentials() -> Result<(String, String), ProviderError> {
 }
 
 fn percent(v: &Value) -> Option<f64> {
-    v.as_f64().or_else(|| v.as_i64().map(|i| i as f64)).map(|n| n / 100.0)
+    v.as_f64()
+        .or_else(|| v.as_i64().map(|i| i as f64))
+        .map(|n| n / 100.0)
 }
 
 fn parse_windows(root: &Value) -> Result<Vec<LimitWindow>, ProviderError> {
@@ -59,10 +61,16 @@ fn parse_windows(root: &Value) -> Result<Vec<LimitWindow>, ProviderError> {
         .unwrap_or(Value::Null);
 
     let mut windows = Vec::new();
-    if let Some(total) = percent(&plan["totalPercentUsed"]) {
+    let cursor_models = percent(&plan["autoPercentUsed"]);
+    if let Some(total) = cursor_models.or_else(|| percent(&plan["totalPercentUsed"])) {
         windows.push(LimitWindow {
             id: "included".into(),
-            label: "Included usage".into(),
+            label: if cursor_models.is_some() {
+                "Cursor Models"
+            } else {
+                "Included usage"
+            }
+            .into(),
             used_fraction: Some(total),
             remaining: None,
             used: None,
@@ -70,22 +78,26 @@ fn parse_windows(root: &Value) -> Result<Vec<LimitWindow>, ProviderError> {
         });
     }
     if let Some(api) = percent(&plan["apiPercentUsed"]) {
-        if api > 0.0 {
-            windows.push(LimitWindow {
-                id: "api".into(),
-                label: "API usage".into(),
-                used_fraction: Some(api),
-                remaining: None,
-                used: None,
-                resets_at,
-            });
-        }
+        windows.push(LimitWindow {
+            id: "api".into(),
+            label: "Other Models".into(),
+            used_fraction: Some(api),
+            remaining: None,
+            used: None,
+            resets_at,
+        });
     }
 
     if let Some(on_demand) = root.pointer("/individualUsage/onDemand") {
         if on_demand.get("enabled").and_then(|v| v.as_bool()) == Some(true) {
-            let limit = on_demand.get("limit").and_then(|v| v.as_f64()).unwrap_or(0.0);
-            let used = on_demand.get("used").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            let limit = on_demand
+                .get("limit")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            let used = on_demand
+                .get("used")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
             if limit > 0.0 {
                 windows.push(LimitWindow {
                     id: "on_demand".into(),

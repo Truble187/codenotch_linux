@@ -150,25 +150,35 @@ def fetch_cursor() -> dict[str, Any]:
         "https://cursor.com/api/usage-summary",
         {"Cookie": cookie, "Accept": "application/json"},
     )
+    return _cursor_snapshot(root)
+
+
+def _cursor_snapshot(root: dict[str, Any]) -> dict[str, Any]:
     resets = root.get("billingCycleEnd")
     plan = (root.get("individualUsage") or {}).get("plan") or {}
     windows = []
-    total = plan.get("totalPercentUsed")
+    # The dashboard's Cursor Models pool is autoPercentUsed. The combined
+    # total can differ; retain it only for older responses without this pool.
+    total = plan.get("autoPercentUsed")
+    label = "Cursor Models"
+    if total is None:
+        total = plan.get("totalPercentUsed")
+        label = "Included usage"
     if total is not None:
         windows.append(
             {
                 "id": "included",
-                "label": "Included usage",
+                "label": label,
                 "usedFraction": float(total) / 100.0,
                 "resetsAt": resets,
             }
         )
     api = plan.get("apiPercentUsed")
-    if api is not None and float(api) > 0:
+    if api is not None:
         windows.append(
             {
                 "id": "api",
-                "label": "API usage",
+                "label": "Other Models",
                 "usedFraction": float(api) / 100.0,
                 "resetsAt": resets,
             }

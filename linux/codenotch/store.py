@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from math import floor
 from typing import Any
 
 from . import providers
@@ -40,7 +41,7 @@ def enrich(snapshot: dict[str, Any]) -> dict[str, Any]:
         frac = w.get("usedFraction")
         item = dict(w)
         if frac is not None:
-            used = round(frac * 100)
+            used = floor(frac * 100 + 0.5)
             item["summary"] = f"{used}% Used · {max(0, 100 - used)}% left"
             item["bandColor"] = band_color(frac)
         else:
@@ -67,7 +68,7 @@ def enrich(snapshot: dict[str, Any]) -> dict[str, Any]:
 
     used = headline.get("usedFraction") if headline else None
     if used is not None:
-        headline_text = f"{round(used * 100)}%"
+        headline_text = f"{floor(used * 100 + 0.5)}%"
     else:
         headline_text = "—"
 

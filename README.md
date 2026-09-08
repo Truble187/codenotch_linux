@@ -45,6 +45,15 @@ Einstellungen: Mit der Maus über den Bereich unter der Notch fahren und auf das
 
 Codenotch meldet sich nirgends selbst an — es liest nur bestehende Sessions.
 
+Cursor zeigt die Kontingente **Cursor Models** (`autoPercentUsed`) und
+**Other Models** (`apiPercentUsed`) getrennt an, auch bei 0 %. Der Ring zeigt
+Cursor Models; `totalPercentUsed` dient nur als Fallback für ältere Antworten.
+Prozentanzeigen werden auf ganze Zahlen gerundet, bei halben Prozenten nach oben.
+Dadurch ergeben beispielsweise 6,8867 % im Cursor-Kontingent korrekt 7 %, auch
+wenn die API daneben einen abweichenden Gesamtwert liefert.
+
+Provider- und Geometrieprüfungen: `make -f Makefile.linux test`.
+
 ## Optik
 
 - Farben: Notch `#000`, Track `#303030`, Ample `#00FF88`, Watch `#F2FF00`, Critical `#FF3F00`
