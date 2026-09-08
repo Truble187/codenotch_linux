@@ -1,4 +1,4 @@
-"""Desktop integration check: python3 linux/tests/check_overlay.py [--scale 2].
+"""Desktop integration check: check_overlay.py [--scale 2] [--notch-scale 1.5].
 
 Starts a demo overlay, checks real GTK/WebKit allocations, then closes it.
 Preferences and provider credentials are neither read nor changed.
@@ -13,6 +13,7 @@ from unittest.mock import patch
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--scale", type=int, default=1)
+parser.add_argument("--notch-scale", type=float, default=1.0)
 args = parser.parse_args()
 os.environ["GDK_SCALE"] = str(args.scale)
 os.environ["CODENOTCH_DEMO"] = "1"
@@ -99,9 +100,19 @@ app.resize_overlay = capture_size
 try:
     settle(1800)
     assert "X11" in Gdk.Display.get_default().__class__.__name__
+    # A parked desktop pointer must not reopen the notch during a synthetic
+    # fold test, especially when scaling moves the shape under the pointer.
+    evaluate(app.webview, """
+      for (const type of ['pointerenter', 'pointerleave']) {
+        document.addEventListener(type, event => {
+          if (event.isTrusted) event.stopImmediatePropagation();
+        }, true);
+      }
+      JSON.stringify(true)
+    """)
     fixtures = app.usage.snapshots_json()
     for edge in ("right", "left", "top", "bottom"):
-        app.prefs = Preferences(notch_edge=edge, notch_visibility="alwaysShow")
+        app.prefs = Preferences(notch_edge=edge, notch_visibility="alwaysShow", notch_scale=args.notch_scale)
         app.position_window()
         app.emit_event("preferences-changed", app.prefs.to_dict())
         settle()
@@ -119,6 +130,9 @@ try:
             assert abs(y + notch["top"] - geo.y) <= 1
         else:
             assert abs(y + notch["bottom"] - (geo.y + geo.height)) <= 1
+        expected_depth = 186 * 44 / 117 * args.notch_scale
+        actual_depth = notch["width"] if edge in ("right", "left") else notch["height"]
+        assert abs(actual_depth - expected_depth) < 1, (actual_depth, expected_depth)
         inside(notch, width, height)
         inside(measured["rects"]["orb"], width, height)
         for cell in measured["cells"]:
@@ -137,12 +151,13 @@ try:
 
         app.prefs.notch_visibility = "onHover"
         app.emit_event("preferences-changed", app.prefs.to_dict())
+        settle()
         evaluate(app.webview, "document.getElementById('notch-wrap').dispatchEvent(new PointerEvent('pointerleave')); JSON.stringify(true)")
         settle(1100)
         folded = evaluate(app.webview, MEASURE)
         assert folded["expanded"] == "false"
         path = folded["path"]
-        assert path["x"] >= -1 and path["width"] < 11, path
+        assert path["x"] >= -1 and path["width"] < 11 * args.notch_scale, path
         evaluate(app.webview, "document.getElementById('edge-hotzone').dispatchEvent(new PointerEvent('pointerenter')); JSON.stringify(true)")
         settle()
         assert evaluate(app.webview, MEASURE)["expanded"] == "true"
@@ -151,7 +166,7 @@ try:
         app.emit_event("preferences-changed", app.prefs.to_dict())
         settle()
         assert regions[-1] == [], "Hidden overlay intercepts clicks"
-        print(f"PASS {edge}: placement, content, tooltip, fold/expand, hidden (scale {args.scale})", flush=True)
+        print(f"PASS {edge}: placement, content, tooltip, fold/expand, hidden (desktop {args.scale}, notch {args.notch_scale})", flush=True)
 
     app.prefs = Preferences(notch_edge="right", notch_visibility="alwaysShow")
     app.position_window()
@@ -164,6 +179,27 @@ try:
         for cell in measured["cells"]:
             inside(cell, *measured["viewport"])
     print(f"PASS changing provider counts (scale {args.scale})", flush=True)
+
+    app.open_settings()
+    settle()
+    settings_view = app.settings_win.get_child()
+    with patch.object(Preferences, "save") as save, patch.object(Preferences, "set_autostart"):
+        evaluate(settings_view, """
+          const slider = document.getElementById('scale');
+          slider.value = 125;
+          slider.dispatchEvent(new Event('input'));
+          document.getElementById('save').click();
+          JSON.stringify(document.getElementById('scale-value').value)
+        """)
+        settle()
+        assert app.prefs.notch_scale == 1.25
+        save.assert_called_once()
+        measured = evaluate(app.webview, MEASURE)
+        assert abs(measured['rects']['notch-wrap']['width'] - 186 * 44 / 117 * 1.25) < 1
+        assert evaluate(settings_view, "JSON.stringify(document.documentElement.scrollWidth <= innerWidth)")
+        assert evaluate(settings_view, "document.getElementById('scale-reset').click(); JSON.stringify(document.getElementById('scale').value)") == '100'
+    app.settings_win.destroy()
+    print("PASS settings slider, save, live resize, reset and horizontal fit", flush=True)
 finally:
     GLib.idle_add(lambda: (app.window.destroy(), False)[1])
     Gtk.main()

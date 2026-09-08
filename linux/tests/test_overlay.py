@@ -4,7 +4,7 @@ import sys
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -68,6 +68,17 @@ class OverlayGeometryTests(unittest.TestCase):
         native = self.app.window.get_window.return_value
         region = native.input_shape_combine_region.call_args.args[0]
         self.assertTrue(region.is_empty())
+
+    def test_new_allocation_reanchors_once_without_resize_loop(self):
+        with patch("codenotch.app.GLib.idle_add") as idle:
+            allocation = SimpleNamespace(width=294, height=389)
+            self.app._on_size_allocated(self.app.window, allocation)
+            self.app._on_size_allocated(self.app.window, allocation)
+            idle.assert_called_once_with(self.app.position_window)
+            self.app._on_size_allocated(
+                self.app.window, SimpleNamespace(width=371, height=487)
+            )
+            self.assertEqual(idle.call_count, 2)
 
 
 if __name__ == "__main__":

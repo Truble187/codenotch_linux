@@ -38,6 +38,12 @@ pub struct Preferences {
     pub notch_visibility: NotchVisibility,
     pub notch_edge: NotchEdge,
     pub launch_at_login: bool,
+    #[serde(default = "default_notch_scale")]
+    pub notch_scale: f64,
+}
+
+fn default_notch_scale() -> f64 {
+    1.0
 }
 
 impl Default for Preferences {
@@ -47,6 +53,7 @@ impl Default for Preferences {
             notch_visibility: NotchVisibility::OnHover,
             notch_edge: NotchEdge::Right,
             launch_at_login: false,
+            notch_scale: default_notch_scale(),
         }
     }
 }

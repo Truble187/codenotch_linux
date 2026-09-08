@@ -35,6 +35,11 @@ CODENOTCH_DEMO=1 ./linux/run.sh
 
 Einstellungen: Mit der Maus über den Bereich unter der Notch fahren und auf das erscheinende Zahnrad klicken. Preferences liegen unter `~/.config/codenotch/preferences.json`. Autostart schreibt `~/.config/autostart/codenotch.desktop`.
 
+Unter **Appearance → Scale** lässt sich die Notch einschließlich Ringen, Schrift
+und Tooltips zwischen 75 % und 150 % skalieren. **Reset** setzt den Regler auf
+die bisherige Größe (100 %). **Save** übernimmt die Größe sofort und speichert
+sie für den nächsten Start; die Skalierung des Desktops bleibt davon unabhängig.
+
 ## Was angezeigt wird
 
 | Provider | Quelle auf Linux |
@@ -53,6 +58,10 @@ Dadurch ergeben beispielsweise 6,8867 % im Cursor-Kontingent korrekt 7 %, auch
 wenn die API daneben einen abweichenden Gesamtwert liefert.
 
 Provider- und Geometrieprüfungen: `make -f Makefile.linux test`.
+Die Darstellung lässt sich in einer laufenden Desktop-Sitzung mit
+`python3 linux/tests/check_overlay.py --notch-scale 0.75` bzw. `--notch-scale 1.5`
+prüfen. Der Test öffnet ein temporäres Demo-Overlay und testet auch den Regler,
+ohne die gespeicherten Einstellungen zu verändern.
 
 ## Optik
 

@@ -90,6 +90,10 @@
         cursor: pointer;
       }
       button.primary:hover { background: #0a1a12; }
+      .scale-row { display: block; }
+      .scale-control { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+      input[type="range"] { flex: 1; min-width: 0; accent-color: var(--accent); }
+      output { min-width: 42px; font-size: 13px; text-align: right; }
     </style>
   </head>
   <body>
@@ -123,6 +127,17 @@
 
     <section>
       <h2>Appearance</h2>
+      <div class="row scale-row">
+        <div>
+          <label for="scale">Scale</label>
+          <span class="hint">Notch and tooltips</span>
+        </div>
+        <div class="scale-control">
+          <input id="scale" type="range" min="75" max="150" step="5" value="100" />
+          <output id="scale-value" for="scale">100%</output>
+          <button id="scale-reset" type="button" aria-label="Reset scale to 100%">Reset</button>
+        </div>
+      </div>
       <div class="row">
         <label for="edge">Screen edge</label>
         <select id="edge">

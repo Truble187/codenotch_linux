@@ -11,6 +11,14 @@
     document.getElementById("edge").value = prefs.notchEdge || "right";
     document.getElementById("visibility").value = prefs.notchVisibility || "onHover";
     document.getElementById("autostart").checked = !!prefs.launchAtLogin;
+    document.getElementById("scale").value = Math.round((prefs.notchScale ?? 1) * 100);
+    updateScaleLabel();
+  }
+
+  function updateScaleLabel() {
+    const scale = document.getElementById("scale");
+    document.getElementById("scale-value").value = `${scale.value}%`;
+    scale.setAttribute("aria-valuetext", `${scale.value}%`);
   }
 
   async function save() {
@@ -22,6 +30,7 @@
       notchEdge: document.getElementById("edge").value,
       notchVisibility: document.getElementById("visibility").value,
       launchAtLogin: document.getElementById("autostart").checked,
+      notchScale: Number(document.getElementById("scale").value) / 100,
     };
     await invoke("set_preferences", { prefs });
     await invoke("refresh_all");
@@ -37,6 +46,12 @@
       console.error(err);
       alert(String(err));
     });
+  });
+
+  document.getElementById("scale").addEventListener("input", updateScaleLabel);
+  document.getElementById("scale-reset").addEventListener("click", () => {
+    document.getElementById("scale").value = 100;
+    updateScaleLabel();
   });
 
   load().catch(console.error);

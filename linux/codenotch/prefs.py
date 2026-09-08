@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -15,6 +16,7 @@ class Preferences:
     notch_visibility: str = "onHover"
     notch_edge: str = "right"
     launch_at_login: bool = False
+    notch_scale: float = 1.0
 
     @classmethod
     def load(cls) -> "Preferences":
@@ -28,11 +30,18 @@ class Preferences:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Preferences":
+        try:
+            scale = float(data.get("notchScale", 1.0))
+        except (TypeError, ValueError):
+            scale = 1.0
+        if not math.isfinite(scale):
+            scale = 1.0
         return cls(
             disconnected_providers=list(data.get("disconnectedProviders") or []),
             notch_visibility=data.get("notchVisibility") or "onHover",
             notch_edge=data.get("notchEdge") or "right",
             launch_at_login=bool(data.get("launchAtLogin")),
+            notch_scale=max(0.75, min(1.5, scale)),
         )
 
     def to_dict(self) -> dict:
@@ -41,6 +50,7 @@ class Preferences:
             "notchVisibility": self.notch_visibility,
             "notchEdge": self.notch_edge,
             "launchAtLogin": self.launch_at_login,
+            "notchScale": self.notch_scale,
         }
 
     def save(self) -> None:

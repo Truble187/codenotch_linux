@@ -35,6 +35,7 @@
   let lastOverlaySize = "";
 
   function applyPrefs() {
+    window.CodenotchDesign.setScale(prefs.notchScale);
     appEl.dataset.edge = prefs.notchEdge || "right";
     appEl.dataset.visibility = prefs.notchVisibility || "onHover";
     if (prefs.notchVisibility === "alwaysShow") setExpanded(true);

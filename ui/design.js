@@ -1,6 +1,12 @@
 window.CodenotchDesign = (function () {
   const SCALE = 44 / 117;
-  const px = (n) => n * SCALE;
+  let scale = SCALE;
+  const px = (n) => n * scale;
+  function setScale(multiplier) {
+    const value = Number(multiplier ?? 1);
+    scale = SCALE * (Number.isFinite(value) ? Math.max(0.75, Math.min(1.5, value)) : 1);
+    document.documentElement.style.setProperty("--scale", scale);
+  }
 
   function sideNotchPath(depth, length, curlRadius = px(103), cornerRadius = px(78.8)) {
     const wanted = Math.max(0, Math.min(cornerRadius, depth / 2));
@@ -70,5 +76,5 @@ window.CodenotchDesign = (function () {
     </svg>`;
   }
 
-  return { SCALE, px, sideNotchPath, pillPath, glyphSvg, ringSvg };
+  return { SCALE, px, setScale, sideNotchPath, pillPath, glyphSvg, ringSvg };
 })();

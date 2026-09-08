@@ -155,6 +155,7 @@ class CodenotchApp:
         self.window.set_type_hint(Gdk.WindowTypeHint.UTILITY)
         self.window.connect("destroy", Gtk.main_quit)
         self.window.connect("map-event", self._on_mapped)
+        self.window.connect("size-allocate", self._on_size_allocated)
         self.window.connect("draw", self._on_draw)
         self.window.connect("screen-changed", self._on_screen_changed)
 
@@ -319,6 +320,14 @@ class CodenotchApp:
     def _on_mapped(self, *_args):
         self.position_window()
         return False
+
+    def _on_size_allocated(self, _widget, allocation):
+        size = (allocation.width, allocation.height)
+        if size != getattr(self, "_last_allocation", None):
+            self._last_allocation = size
+            # Mutter may process a move against the old size while shrinking.
+            # Re-anchor once GTK has received the actual new allocation.
+            GLib.idle_add(self.position_window)
 
     def _monitor_geometry(self):
         display = Gdk.Display.get_default()
