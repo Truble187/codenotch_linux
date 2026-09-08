@@ -145,6 +145,7 @@ class CodenotchApp:
         self._overlay_h = 720
 
         self.window = Gtk.Window(title="Codenotch")
+        self.window.set_name("codenotch-overlay")
         self.window.set_decorated(False)
         self.window.set_keep_above(True)
         self.window.set_skip_taskbar_hint(True)
@@ -168,6 +169,11 @@ class CodenotchApp:
             window, * {
               background-color: transparent;
               background-image: none;
+            }
+            #codenotch-overlay,
+            #codenotch-overlay decoration {
+              box-shadow: none;
+              border: none;
             }
             """
         )
