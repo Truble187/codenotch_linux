@@ -1,0 +1,11 @@
+{
+  "name": "codenotch",
+  "version": "1.5.0",
+  "private": true,
+  "description": "Optional JS tooling — the app builds with Cargo/tauri-cli alone using ui/",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "cargo tauri dev",
+    "build": "cargo tauri build"
+  }
+}

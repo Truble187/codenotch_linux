@@ -1,0 +1,437 @@
+:root {
+  --scale: 0.3760683761; /* 44/117 */
+  --notch: #000000;
+  --card: #000000;
+  --ring-track: #303030;
+  --bar-track: #2d2d2d;
+  --ample: #00ff88;
+  --watch: #f2ff00;
+  --critical: #ff3f00;
+  --text-primary: #ffffff;
+  --text-secondary: #808080;
+  --ring: calc(117px * var(--scale));
+  --track-stroke: calc(15.5px * var(--scale));
+  --progress-stroke: calc(8px * var(--scale));
+  --glyph: calc(46px * var(--scale));
+  --body-depth: calc(186px * var(--scale));
+  --curl: calc(103px * var(--scale));
+  --corner: calc(78.8px * var(--scale));
+  --pad-top: calc(69.5px * var(--scale));
+  --pad-bottom: calc(50.1px * var(--scale));
+  --cell-spacing: calc(83.5px * var(--scale));
+  --ring-label-gap: calc(26.9px * var(--scale));
+  --pill-w: calc(26px * var(--scale));
+  --pill-h: calc(210px * var(--scale));
+  --orb: calc(124px * var(--scale));
+  --orb-stroke: calc(18px * var(--scale));
+  --card-w: calc(600px * var(--scale));
+  --card-radius: calc(49.5px * var(--scale));
+  --card-pad: calc(32px * var(--scale));
+  --bar-h: calc(10.5px * var(--scale));
+  --font-percent: calc((27px * var(--scale)) / 0.714);
+  --font-title: calc((26px * var(--scale)) / 0.714);
+  --font-body: calc((18px * var(--scale)) / 0.714);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  font-family: "SF Pro Text", "Segoe UI", "Ubuntu", "Cantarell", system-ui, sans-serif;
+  color: var(--text-primary);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+#edge-hotzone {
+  position: absolute;
+  z-index: 1;
+  pointer-events: auto;
+  background: transparent;
+}
+
+#app[data-edge="right"] #edge-hotzone {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 34px;
+}
+
+#app[data-edge="left"] #edge-hotzone {
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 34px;
+}
+
+#app[data-edge="top"] #edge-hotzone {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 34px;
+}
+
+#app[data-edge="bottom"] #edge-hotzone {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 34px;
+}
+
+#app[data-visibility="hidden"] #stage {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#app[data-visibility="hidden"] #edge-hotzone {
+  pointer-events: none;
+}
+
+#stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: calc(28px * var(--scale));
+  padding: 0;
+  pointer-events: none;
+}
+
+#stage #notch-wrap,
+#stage #tooltip,
+#stage #orb {
+  pointer-events: auto;
+}
+
+#app[data-edge="right"] #stage {
+  justify-content: flex-end;
+}
+
+#app[data-edge="left"] #stage {
+  justify-content: flex-end;
+  flex-direction: row-reverse;
+}
+
+#app[data-edge="top"] #stage,
+#app[data-edge="bottom"] #stage {
+  justify-content: flex-end;
+  align-items: center;
+  flex-direction: column-reverse;
+}
+
+#app[data-edge="bottom"] #stage {
+  flex-direction: column;
+}
+
+#notch-wrap {
+  position: relative;
+  width: var(--body-depth);
+  min-height: var(--pill-h);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+  overflow: visible;
+  flex-shrink: 0;
+  transition: width 0.42s cubic-bezier(0.22, 1.2, 0.36, 1),
+    min-height 0.42s cubic-bezier(0.22, 1.2, 0.36, 1),
+    height 0.42s cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+
+#app[data-expanded="false"] #notch-wrap {
+  width: var(--pill-w);
+  min-height: var(--pill-h);
+}
+
+#app[data-edge="top"] #notch-wrap,
+#app[data-edge="bottom"] #notch-wrap {
+  width: auto;
+  min-width: var(--pill-h);
+  height: var(--body-depth);
+  flex-direction: row;
+}
+
+#app[data-edge="top"][data-expanded="false"] #notch-wrap,
+#app[data-edge="bottom"][data-expanded="false"] #notch-wrap {
+  min-width: var(--pill-h);
+  height: var(--pill-w);
+}
+
+#notch-shape {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: visible;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.45));
+}
+
+#cells {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: calc(var(--curl) + var(--pad-top)) 0 calc(var(--curl) + var(--pad-bottom));
+  flex-shrink: 0;
+  gap: var(--cell-spacing);
+  opacity: 1;
+  transition: opacity 0.25s ease;
+}
+
+#app[data-expanded="false"] #cells,
+#app[data-expanded="false"] #orb {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#app[data-edge="top"] #cells,
+#app[data-edge="bottom"] #cells {
+  flex-direction: row;
+  padding: 0 calc(var(--curl) + 50.1px * var(--scale));
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ring-label-gap);
+  width: var(--ring);
+  cursor: pointer;
+  animation: cell-in 0.35s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+.cell.stale {
+  opacity: 0.45;
+}
+
+@keyframes cell-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.ring {
+  width: var(--ring);
+  height: var(--ring);
+  position: relative;
+}
+
+.ring svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transform: rotate(-90deg);
+}
+
+.ring .glyph {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transform: none;
+}
+
+.ring .glyph svg {
+  width: var(--glyph);
+  height: var(--glyph);
+  transform: none;
+}
+
+.percent {
+  font-size: var(--font-percent);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+#orb {
+  position: absolute;
+  width: var(--orb);
+  height: var(--orb);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  bottom: calc(-1 * var(--curl) + var(--orb) / 2);
+  left: 50%;
+  transform: translateX(-50%);
+  transition: opacity 0.25s ease;
+}
+
+#app[data-edge="top"] #orb,
+#app[data-edge="bottom"] #orb {
+  left: auto;
+  right: calc(-1 * var(--curl) + var(--orb) / 2);
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+}
+
+#orb:hover .orb-gear {
+  opacity: 1;
+}
+
+.orb-gear {
+  width: 70%;
+  height: 70%;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+#tooltip {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
+  animation: tooltip-in 0.5s cubic-bezier(0.22, 1.15, 0.36, 1);
+}
+
+#tooltip[hidden] {
+  display: none;
+}
+
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.tooltip-card {
+  background: var(--card);
+  border-radius: var(--card-radius);
+  padding: var(--card-pad);
+  width: var(--card-w);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+
+.tooltip-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.tooltip-glyph {
+  width: 18px;
+  height: 18px;
+  display: inline-grid;
+  place-items: center;
+}
+
+.tooltip-glyph svg {
+  width: 18px;
+  height: 18px;
+}
+
+.tooltip-title {
+  font-size: var(--font-title);
+  font-weight: 600;
+}
+
+.tooltip-window {
+  margin-top: 12px;
+}
+
+.tooltip-window-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: var(--font-body);
+  margin-bottom: 6px;
+}
+
+.bar {
+  height: var(--bar-h);
+  border-radius: 999px;
+  background: var(--bar-track);
+  overflow: hidden;
+}
+
+.bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.tooltip-summary {
+  margin-top: 6px;
+  font-size: var(--font-body);
+  font-weight: 500;
+}
+
+.tooltip-tail {
+  flex-shrink: 0;
+  width: 0;
+  height: 0;
+  border-top: 14px solid transparent;
+  border-bottom: 14px solid transparent;
+  border-left: 16px solid #000;
+  filter: drop-shadow(4px 0 8px rgba(0, 0, 0, 0.25));
+}
+
+#app[data-edge="left"] .tooltip-tail {
+  order: -1;
+  border-left: none;
+  border-right: 16px solid #000;
+}
+
+#app[data-edge="top"] #tooltip {
+  flex-direction: column-reverse;
+}
+
+#app[data-edge="bottom"] #tooltip {
+  flex-direction: column;
+}
+
+#app[data-edge="top"] .tooltip-tail,
+#app[data-edge="bottom"] .tooltip-tail {
+  border: none;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+}
+
+#app[data-edge="top"] .tooltip-tail {
+  border-bottom: 16px solid #000;
+}
+
+#app[data-edge="bottom"] .tooltip-tail {
+  border-top: 16px solid #000;
+}
+
+#app[data-visibility="alwaysShow"][data-expanded="true"] #cells,
+#app[data-visibility="alwaysShow"][data-expanded="true"] #orb {
+  opacity: 1;
+  pointer-events: auto;
+}

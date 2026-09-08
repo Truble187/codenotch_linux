@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Codenotch
+Comment=Coding assistant usage notch for Linux
+Exec=codenotch
+Icon=codenotch
+Terminal=false
+Categories=Utility;Development;
+StartupNotify=false
+X-GNOME-Autostart-enabled=true

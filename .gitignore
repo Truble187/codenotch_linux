@@ -7,3 +7,15 @@ DerivedData/
 xcuserdata/
 *.xcuserstate
 .swiftpm/
+
+# Linux / Tauri
+node_modules/
+dist/
+src-tauri/target/
+.cargo/
+.deps/
+*.AppImage
+*.deb
+__pycache__/
+*.pyc
+.codenotch-dev/

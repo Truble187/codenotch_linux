@@ -1,0 +1,20 @@
+# Linux helpers for Codenotch
+
+.PHONY: run demo test test-ui prefs-clean
+
+run:
+	./linux/run.sh
+
+demo:
+	CODENOTCH_DEMO=1 ./linux/run.sh
+
+test:
+	python3 -m unittest discover -s linux/tests -v
+
+test-ui:
+	python3 linux/tests/check_overlay.py
+	python3 linux/tests/check_overlay.py --scale 2
+
+prefs-clean:
+	rm -f $(HOME)/.config/codenotch/preferences.json
+	rm -f $(HOME)/.config/autostart/codenotch.desktop
