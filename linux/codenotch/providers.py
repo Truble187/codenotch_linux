@@ -109,6 +109,12 @@ def fetch(provider_id: str) -> dict[str, Any]:
     raise ValueError(f"unknown provider {provider_id}")
 
 
+class RateLimited(Exception):
+    def __init__(self, retry_after: float = 0):
+        super().__init__("rate limited")
+        self.retry_after = retry_after
+
+
 def _http_json(url: str, headers: dict[str, str]) -> Any:
     req = urllib.request.Request(url, headers=headers)
     try:
@@ -118,6 +124,12 @@ def _http_json(url: str, headers: dict[str, str]) -> Any:
     except urllib.error.HTTPError as exc:
         if exc.code in (401, 403):
             raise NeedsAuth() from exc
+        if exc.code == 429:
+            try:
+                retry = float(exc.headers.get("Retry-After") or 0)
+            except ValueError:
+                retry = 0
+            raise RateLimited(retry) from exc
         raise RuntimeError(f"bad response ({exc.code})") from exc
     if status in (401, 403):
         raise NeedsAuth()
@@ -334,12 +346,15 @@ def fetch_claude() -> dict[str, Any]:
         {
             "Authorization": f"Bearer {token}",
             "anthropic-beta": "oauth-2025-04-20",
+            "User-Agent": "claude-code/2.1.294",
+            "Accept": "application/json",
         },
     )
     windows = []
     for limit in root.get("limits") or []:
         kind = limit.get("kind")
-        if not kind or limit.get("resetsAt") is None:
+        resets = limit.get("resets_at", limit.get("resetsAt"))
+        if not kind or resets is None:
             continue
         label = {
             "session": "Current session",
@@ -352,12 +367,13 @@ def fetch_claude() -> dict[str, Any]:
                 "id": kind,
                 "label": label,
                 "usedFraction": float(limit.get("percent", 0)) / 100.0,
-                "resetsAt": limit.get("resetsAt"),
+                "resetsAt": resets,
             }
         )
 
     def merge(named: dict | None, wid: str, label: str):
-        if not named or named.get("resetsAt") is None:
+        resets = (named or {}).get("resets_at", (named or {}).get("resetsAt"))
+        if not named or resets is None:
             return
         if any(w["id"] == wid for w in windows):
             return
@@ -366,12 +382,12 @@ def fetch_claude() -> dict[str, Any]:
                 "id": wid,
                 "label": label,
                 "usedFraction": float(named.get("utilization", 0)) / 100.0,
-                "resetsAt": named.get("resetsAt"),
+                "resetsAt": resets,
             }
         )
 
-    merge(root.get("fiveHour"), "session", "Current session")
-    merge(root.get("sevenDay"), "weekly_all", "All models")
+    merge(root.get("five_hour") or root.get("fiveHour"), "session", "Current session")
+    merge(root.get("seven_day") or root.get("sevenDay"), "weekly_all", "All models")
     windows.sort(key=lambda w: 0 if w["id"] == "session" else 1 if w["id"] == "weekly_all" else 2)
     if not windows:
         raise RuntimeError("Claude reported no usage windows")
