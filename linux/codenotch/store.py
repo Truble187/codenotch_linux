@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+
 from datetime import datetime, timezone
 from math import floor
 from typing import Any
@@ -106,11 +108,37 @@ class UsageStore:
             self.snapshots = providers.fixtures()
             return
         next_snaps: list[dict[str, Any]] = []
+        backoff = self.__dict__.setdefault("_backoff", {})
+        last_good = self.__dict__.setdefault("_last_good", {})
         for provider_id in ("claude", "cursor", "codex"):
             if not self.prefs.is_connected(provider_id):
                 continue
+            if time.time() < backoff.get(provider_id, 0) and provider_id in last_good:
+                next_snaps.append(last_good[provider_id])
+                continue
             try:
-                next_snaps.append(providers.fetch(provider_id))
+                snap = providers.fetch(provider_id)
+                last_good[provider_id] = snap
+                next_snaps.append(snap)
+            except providers.RateLimited as exc:
+                backoff[provider_id] = time.time() + max(exc.retry_after, 300)
+                if provider_id in last_good:
+                    next_snaps.append(last_good[provider_id])
+                else:
+                    next_snaps.append(
+                        {
+                            "id": provider_id,
+                            "displayName": providers.display_name(provider_id),
+                            "glyph": providers.glyph(provider_id),
+                            "fidelity": "official",
+                            "status": {
+                                "kind": "error",
+                                "message": "Rate limited – retrying in a few minutes",
+                            },
+                            "windows": [],
+                            "headlineId": None,
+                        }
+                    )
             except providers.NeedsAuth:
                 next_snaps.append(providers.needs_auth_stub(provider_id))
             except Exception as exc:
